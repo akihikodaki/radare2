@@ -14,6 +14,7 @@
 #define REGID64(x) insn->detail->arm64.operands[x].reg
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
+#define ADDR(x) (insn->detail->arm.operands[x].addr)
 #define IMM64(x) insn->detail->arm64.operands[x].imm
 #define MEMBASE(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
 #define MEMBASE64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
@@ -169,6 +170,10 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 		break;
 	case ARM_OP_FP:
 		sprintf (buf, "%lf", insn->detail->arm.operands[n].fp);
+		break;
+	case ARM_OP_ADDR:
+		sprintf (buf, "%"PFMT64d, (ut64)
+				insn->detail->arm.operands[n].addr);
 		break;
 	default:
 		break;
@@ -1323,13 +1328,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0) & UT32_MAX;
+		op->jump = ADDR(0) & UT32_MAX;
 		op->fail = addr + op->size;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = IMM(1) & UT32_MAX;
+		op->jump = ADDR(1) & UT32_MAX;
 		op->fail = addr + op->size;
 		if (op->jump == op->fail) {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -1347,7 +1352,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->fail = addr+op->size;
 		}
-		op->jump = IMM(0) & UT32_MAX;
+		op->jump = ADDR(0) & UT32_MAX;
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
@@ -1367,7 +1372,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = IMM(0);
+			op->jump = ADDR(0);
 			op->fail = addr + op->size;
 		}
 		break;
